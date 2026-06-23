@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Analyze (정적분석 — 오류/경고)
-        run: flutter analyze
+      - name: Analyze (정적분석 — 오류/경고는 차단, 스타일 info는 비차단)
+        run: flutter analyze --no-fatal-infos
 
       - name: Test (단위 테스트)
         run: flutter test

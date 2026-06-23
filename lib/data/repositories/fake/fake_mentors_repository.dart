@@ -1,3 +1,4 @@
+import '../../../core/models/cash.dart';
 import '../../../core/models/note.dart';
 import '../../../core/models/review.dart';
 import '../../../core/models/user.dart';
