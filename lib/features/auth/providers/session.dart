@@ -27,6 +27,15 @@ class DemoSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 실 인증 사용자 적용(Supabase 세션 기준). 데모와 달리 실제 uid·이름을 보관해
+  /// 작성자 id 등이 올바르게 들어가도록 한다. 같은 사용자면 불필요한 알림을 생략.
+  void applyUser(AppUser user) {
+    if (_user?.id == user.id && _role == user.role) return;
+    _role = user.role;
+    _user = user;
+    notifyListeners();
+  }
+
   void signOut() {
     _role = null;
     _user = null;

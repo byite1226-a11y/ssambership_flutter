@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../models/user.dart';
 import '../../features/auth/providers/session.dart';
 import '../../features/auth/screens/launch_screen.dart';
+import '../../features/auth/screens/signup_screen.dart';
 import '../../features/cash/screens/cash_screen.dart';
 import '../../features/commission/screens/commission_screens.dart';
 import '../../features/community/screens/community_screens.dart';
@@ -56,6 +57,13 @@ final appRouter = GoRouter(
   },
   routes: [
     GoRoute(path: '/', builder: (_, __) => const LaunchScreen()),
+
+    // ---- 회원가입 (실데이터 모드, 루트 위 전체화면) ----
+    GoRoute(
+      path: '/signup',
+      parentNavigatorKey: _rootKey,
+      builder: (_, __) => const SignUpScreen(),
+    ),
 
     // ---- 핵심 기능 데모 미리보기 (진입 화면에서 바로) ----
     GoRoute(
