@@ -1,0 +1,25 @@
+## 쌤버십 정적 분석 규칙
+## flutter_lints 기본 세트 + 프로젝트 관례.
+## Codex/CI 에서 `flutter analyze` 시 이 규칙이 적용됩니다.
+
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # 더미↔Supabase 전환 구조상 일부 미사용 경고는 정보 수준으로 둡니다.
+    todo: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "build/**"
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    prefer_const_declarations: true
+    prefer_final_locals: true
+    avoid_print: true
+    use_key_in_widget_constructors: true
+    sized_box_for_whitespace: true
+    sort_child_properties_last: true

@@ -1,0 +1,71 @@
+name: ssambership
+description: "쌤버십 — 구독형 질문 멘토링 + 교육형 커뮤니티 (Flutter / Android first)"
+publish_to: "none"
+version: 0.1.0+1
+
+# ---------------------------------------------------------------------------
+# 패키지 선택 근거는 기획서를 그대로 따랐습니다.
+#  - 필기 엔진: scribble (1차) + perfect_freehand (세밀 통제 코어)
+#      → "연결노트 필기 기술기획서 Flutter" 4-2 권장안
+#  - 스캔 주석: flutter_painter_v2 / image_painter (배경 이미지 위 주석)
+#      → "스캔이미지 필기주석 기술기획서 Flutter" 4-2 권장안
+#  - 백엔드: supabase_flutter (웹과 동일한 Supabase 재사용)
+#  - 라우팅: go_router  /  상태관리: flutter_riverpod
+#  - (P2) 온디바이스 손글씨 인식: google_mlkit_digital_ink_recognition
+#
+#  ⚠️ 비코더 안내: 아래 버전은 "이 시점 기준 안정 버전"입니다.
+#     터미널에서 `flutter pub get` 을 실행하면 호환 버전으로 맞춰집니다.
+#     충돌이 나면 해당 줄의 버전을 지우고(예: `scribble:`) 다시 pub get 하세요.
+# ---------------------------------------------------------------------------
+
+environment:
+  # CardThemeData / Color.withValues 등 Flutter 3.27+ API를 사용하므로
+  # 최신 안정 채널(3.27 이상)을 권장합니다. (대부분의 현재 설치본이 충족)
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # --- 상태관리 / 라우팅 ---
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.0
+
+  # --- 백엔드 (웹과 동일 Supabase) ---
+  supabase_flutter: ^2.5.6
+
+  # --- 필기 엔진 (연결노트 / 스캔 주석 공유) ---
+  scribble: ^0.10.0            # 필압·팜리젝션·undo·JSON 직렬화·PNG export 내장
+  perfect_freehand: ^2.3.0     # 필압 반응 스트로크 외곽선 (세밀 튜닝용 코어)
+
+  # --- 스캔 이미지 위 주석 ---
+  flutter_painter_v2: ^2.0.0   # 배경 이미지 위 자유 드로잉·도형·텍스트
+  image_painter: ^0.7.1        # 이미지 주석 특화 (대안/빠른 경로)
+
+  # --- 문서 스캔 (촬영·보정) ---
+  cunning_document_scanner: ^1.2.3  # 카메라 문서 스캔 + 가장자리 보정
+  image_picker: ^1.1.2              # 갤러리 이미지 (권한 거부 시 폴백)
+
+  # --- 파일/이미지/저장 보조 ---
+  path_provider: ^2.1.3
+  image: ^4.2.0
+  uuid: ^4.4.0
+  intl: ^0.19.0
+
+  # --- (P2, 선택) 온디바이스 손글씨 인식 ---
+  # google_mlkit_digital_ink_recognition: ^0.13.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  # 현재 앱은 번들 이미지를 사용하지 않습니다(모든 UI를 코드로 그리고,
+  # 스캔/프로필 이미지는 실행 중 선택). 나중에 로고·일러스트를 추가하려면
+  # 아래 두 줄의 주석을 풀고 assets/images/ 에 파일을 넣으세요.
+  # assets:
+  #   - assets/images/

@@ -1,0 +1,51 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# Flutter / Dart / Pub
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+.fvm/
+
+# 생성되는 플랫폼 폴더 (flutter create . 로 재생성)
+# /android/  /ios/  /web/  /macos/  /windows/  /linux/  는 소스에 포함하지 않습니다.
+
+# Symbolication / Obfuscation
+app.*.symbols
+app.*.map.json
+
+# Android
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+
+# 환경변수 (Supabase 키 등) — 절대 커밋 금지
+.env
+.env.*

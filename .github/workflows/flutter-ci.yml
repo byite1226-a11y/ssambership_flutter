@@ -1,0 +1,36 @@
+name: Flutter CI
+
+# 웹의 Vercel처럼, 모든 push/PR마다 Flutter 코드를 자동 검증하는 그물망.
+# - flutter analyze : 컴파일·정적분석 오류/경고 검출
+# - flutter test    : 단위 테스트 실행
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analyze-test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter (stable, 3.27+)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze (정적분석 — 오류/경고)
+        run: flutter analyze
+
+      - name: Test (단위 테스트)
+        run: flutter test
