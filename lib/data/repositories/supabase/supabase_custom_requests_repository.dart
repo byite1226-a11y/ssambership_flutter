@@ -139,7 +139,7 @@ class SupabaseCustomRequestsRepository implements CustomRequestsRepository {
   @override
   Future<List<CustomOrder>> fetchMyOrders() async {
     final rows = await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .select()
         .eq('student_id', _uid ?? '')
         .order('created_at', ascending: false);
@@ -151,7 +151,7 @@ class SupabaseCustomRequestsRepository implements CustomRequestsRepository {
   @override
   Future<List<CustomOrder>> fetchMentorOrders() async {
     final rows = await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .select()
         .eq('mentor_id', _uid ?? '')
         .order('created_at', ascending: false);
@@ -163,7 +163,7 @@ class SupabaseCustomRequestsRepository implements CustomRequestsRepository {
   @override
   Future<CustomOrder?> fetchOrder(String orderId) async {
     final row = await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .select()
         .eq('id', orderId)
         .maybeSingle();
@@ -173,7 +173,7 @@ class SupabaseCustomRequestsRepository implements CustomRequestsRepository {
   @override
   Future<CustomOrder?> fetchOrderForPost(String postId) async {
     final row = await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .select()
         .eq('post_id', postId)
         .maybeSingle();
@@ -213,7 +213,7 @@ class SupabaseCustomRequestsRepository implements CustomRequestsRepository {
         .single();
     // 주문 상태 → delivered
     await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .update({'status': 'delivered'}).eq('id', orderId);
     return OrderDeliverable.fromMap(row);
   }
@@ -224,7 +224,7 @@ class SupabaseCustomRequestsRepository implements CustomRequestsRepository {
     await _db.rpc('accept_custom_order_deliverable_atomic',
         params: {'p_order_id': orderId});
     final row = await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .select()
         .eq('id', orderId)
         .maybeSingle();
@@ -237,7 +237,7 @@ class SupabaseCustomRequestsRepository implements CustomRequestsRepository {
     await _db.rpc('record_custom_order_escrow_refund',
         params: {'p_order_id': orderId});
     final row = await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .select()
         .eq('id', orderId)
         .maybeSingle();
@@ -259,10 +259,10 @@ class SupabaseCustomRequestsRepository implements CustomRequestsRepository {
       'status': 'pending',
     });
     await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .update({'status': 'disputed'}).eq('id', orderId);
     final row = await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .select()
         .eq('id', orderId)
         .maybeSingle();

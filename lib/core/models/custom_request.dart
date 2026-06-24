@@ -155,7 +155,7 @@ class CustomRequestApplication {
       );
 }
 
-/// custom_orders — 선정 후 생성되는 주문(에스크로).
+/// custom_request_orders — 선정 후 생성되는 주문(에스크로).
 class CustomOrder {
   const CustomOrder({
     required this.id,

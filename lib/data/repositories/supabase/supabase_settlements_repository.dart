@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/settlement.dart';
 import '../settlements_repository.dart';
 
-/// 실DB 구현 — 정산은 custom_orders(멘토 몫 80%)에서 파생, 출금은 withdrawals.
+/// 실DB 구현 — 정산은 custom_request_orders(멘토 몫 80%)에서 파생, 출금은 withdrawals.
 ///
 /// 정산/출금 전용 테이블·뷰·RPC는 운영 정책에 맞춰 확정 필요. 아래는 best-effort.
 class SupabaseSettlementsRepository implements SettlementsRepository {
@@ -14,7 +14,7 @@ class SupabaseSettlementsRepository implements SettlementsRepository {
 
   Future<List<SettlementEntry>> _all() async {
     final rows = await _db
-        .from('custom_orders')
+        .from('custom_request_orders')
         .select()
         .eq('mentor_id', _uid ?? '')
         .order('created_at', ascending: false);
