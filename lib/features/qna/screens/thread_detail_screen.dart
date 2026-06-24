@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/note.dart';
 import '../../../core/models/user.dart';
+import '../../../core/realtime/thread_realtime.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/async_views.dart';
 import '../../../providers/repository_providers.dart';
@@ -29,8 +30,22 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   final TextEditingController _input = TextEditingController();
   bool _sending = false;
 
+  /// 질문방 메시지 실시간 Broadcast(잠금 규칙). 같은 스레드를 연 상대가 보낸
+  /// 메시지를 수신하면 목록을 새로고침한다. 데모 모드면 자동 무시.
+  late final ThreadRealtime _realtime =
+      ThreadRealtime('question-thread-${widget.threadId}');
+
+  @override
+  void initState() {
+    super.initState();
+    _realtime.subscribe(() {
+      if (mounted) ref.invalidate(messagesProvider(widget.threadId));
+    });
+  }
+
   @override
   void dispose() {
+    _realtime.dispose();
     _input.dispose();
     super.dispose();
   }
@@ -48,6 +63,8 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
           );
       _input.clear();
       ref.invalidate(messagesProvider(widget.threadId));
+      // 상대에게 실시간 알림(데모 모드면 내부에서 무시).
+      await _realtime.notifyNewMessage();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

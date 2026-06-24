@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/models/individual_question.dart';
 import '../../../core/models/user.dart';
+import '../../../core/realtime/thread_realtime.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/responsive.dart';
 import '../../../core/widgets/async_views.dart';
@@ -440,8 +441,24 @@ class _IndividualQuestionDetailScreenState
   final _answer = TextEditingController();
   bool _busy = false;
 
+  /// 개별질문 메시지·상태 실시간 Broadcast. 상대(학생↔멘토)가 답변/정산/환불 등으로
+  /// 변경을 일으키면 수신해 질문·답변을 새로고침한다. 데모 모드면 자동 무시.
+  late final ThreadRealtime _realtime =
+      ThreadRealtime('individual-question-${widget.id}');
+
+  @override
+  void initState() {
+    super.initState();
+    _realtime.subscribe(() {
+      if (!mounted) return;
+      ref.invalidate(iqMessagesProvider(widget.id));
+      ref.invalidate(individualQuestionProvider(widget.id));
+    });
+  }
+
   @override
   void dispose() {
+    _realtime.dispose();
     _answer.dispose();
     super.dispose();
   }
@@ -457,6 +474,8 @@ class _IndividualQuestionDetailScreenState
     try {
       await action();
       _refreshIq(ref, widget.id);
+      // 상대에게 실시간 알림(데모 모드면 내부에서 무시).
+      await _realtime.notifyNewMessage();
       if (mounted) _snack(okMsg);
     } catch (e) {
       _snack(e.toString().replaceFirst('Exception: ', ''));
