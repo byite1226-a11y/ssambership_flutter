@@ -11,8 +11,9 @@ import '../individual_questions_repository.dart';
 ///  - 공개 풀: rpc('list_open_individual_questions_for_mentor')
 ///  - 가져가기: rpc('claim_individual_question')
 ///  - 답변: individual_question_messages insert + status='answered' (RPC 아님)
-///  - 정산/환불(release/refund)은 service_role 전용 RPC라 클라이언트 직접 호출 불가
-///    → 서버 경유 필요(별도 작업, 아래 confirmAndRelease/cancel 참고).
+///  - 정산/환불(release/refund): 학생 본인용 인증 래퍼 RPC 호출
+///    (release_individual_question / refund_individual_question — 091 마이그레이션).
+///    래퍼가 auth.uid()=student_id·상태를 검증한 뒤 service_role 코어 함수를 내부 호출한다.
 class SupabaseIndividualQuestionsRepository
     implements IndividualQuestionsRepository {
   SupabaseIndividualQuestionsRepository(this._db);
