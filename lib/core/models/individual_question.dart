@@ -124,10 +124,16 @@ class IndividualQuestion {
         status: iqStatusFromString(m['status'] as String?),
         title: (m['title'] as String?) ?? '개별 질문',
         body: (m['body'] as String?) ?? '',
-        priceCash: (m['amount_cents'] as num?) != null
-            ? ((m['amount_cents'] as num).toInt() ~/ 100)
-            : ((m['amount_cash'] as num?)?.toInt() ?? 0),
-        askerId: (m['asker_id'] as String?) ?? 'demo-student',
+        // 실제 컬럼은 price_cents. (구버전 키 amount_cents/amount_cash 폴백 유지)
+        priceCash: (m['price_cents'] as num?) != null
+            ? ((m['price_cents'] as num).toInt() ~/ 100)
+            : (m['amount_cents'] as num?) != null
+                ? ((m['amount_cents'] as num).toInt() ~/ 100)
+                : ((m['amount_cash'] as num?)?.toInt() ?? 0),
+        // 실제 컬럼은 student_id. (구버전 키 asker_id 폴백 유지)
+        askerId: (m['student_id'] as String?) ??
+            (m['asker_id'] as String?) ??
+            'demo-student',
         askerLabel: (m['asker_label'] as String?) ?? '학생',
         designatedMentorId: m['designated_mentor_id'] as String?,
         designatedMentorName: m['designated_mentor_name'] as String?,

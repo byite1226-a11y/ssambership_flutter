@@ -6,10 +6,13 @@ import '../individual_questions_repository.dart';
 /// 실DB 구현 — `individual_questions` / `individual_question_messages` /
 /// `mentor_individual_question_pricing` + 예치/정산 RPC.
 ///
-/// 주의(운영 스키마 확정 시 검증): 컬럼/ RPC 명은 웹 기준 best-effort.
+/// 컬럼/RPC 명은 웹(공유 DB)을 기준으로 정렬했다.
 ///  - 예치 등록: rpc('create_individual_question_with_hold')
 ///  - 공개 풀: rpc('list_open_individual_questions_for_mentor')
-///  - 가져가기/답변/정산/환불: claim/answer/release/refund RPC
+///  - 가져가기: rpc('claim_individual_question')
+///  - 답변: individual_question_messages insert + status='answered' (RPC 아님)
+///  - 정산/환불(release/refund)은 service_role 전용 RPC라 클라이언트 직접 호출 불가
+///    → 서버 경유 필요(별도 작업, 아래 confirmAndRelease/cancel 참고).
 class SupabaseIndividualQuestionsRepository
     implements IndividualQuestionsRepository {
   SupabaseIndividualQuestionsRepository(this._db);
@@ -26,7 +29,7 @@ class SupabaseIndividualQuestionsRepository
     final rows = await _db
         .from('individual_questions')
         .select()
-        .eq('asker_id', (_uid ?? '') as Object)
+        .eq('student_id', (_uid ?? '') as Object)
         .order('created_at', ascending: false);
     return _mapList(rows);
   }
@@ -151,18 +154,23 @@ class SupabaseIndividualQuestionsRepository
     required String id,
     required String body,
   }) async {
-    final row = await _db.rpc('answer_individual_question',
-        params: {'p_question_id': id, 'p_body': body});
-    if (row is Map<String, dynamic>) {
-      return IndividualQuestionMessage.fromMap(row);
-    }
-    return IndividualQuestionMessage(
-      id: 'iqm-${DateTime.now().microsecondsSinceEpoch}',
-      questionId: id,
-      authorId: _uid ?? '',
-      body: body,
-      createdAt: DateTime.now(),
-    );
+    // 웹과 동일한 2단계: ① 답변 메시지를 individual_question_messages 에 기록,
+    // ② 질문 상태를 answered 로 전이(학생이 [확인·정산] 버튼을 보게 됨).
+    // 전용 answer RPC 는 DB 에 없으므로 직접 insert/update 로 처리한다.
+    final inserted = await _db
+        .from('individual_question_messages')
+        .insert({
+          'question_id': id,
+          'author_id': _uid,
+          'body': body,
+        })
+        .select()
+        .single();
+    await _db.from('individual_questions').update({
+      'status': 'answered',
+      'answered_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
+    return IndividualQuestionMessage.fromMap(inserted);
   }
 
   @override
