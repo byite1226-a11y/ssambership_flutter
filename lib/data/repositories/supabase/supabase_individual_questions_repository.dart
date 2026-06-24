@@ -6,13 +6,13 @@ import '../individual_questions_repository.dart';
 /// 실DB 구현 — `individual_questions` / `individual_question_messages` /
 /// `mentor_individual_question_pricing` + 예치/정산 RPC.
 ///
-/// 컬럼/RPC 명은 웹(공유 DB)을 기준으로 정렬했다.
-///  - 예치 등록: rpc('create_individual_question_with_hold')
+/// 컬럼/RPC 명은 웹(공유 DB)을 기준으로 정렬했다. 돈 직결 RPC는 service_role 코어를
+/// 직접 부르지 않고, auth.uid()를 강제하는 인증 래퍼(091·092)를 경유한다.
+///  - 예치 등록: rpc('create_individual_question_as_student') — 092
 ///  - 공개 풀: rpc('list_open_individual_questions_for_mentor')
-///  - 가져가기: rpc('claim_individual_question')
+///  - 가져가기: rpc('claim_individual_question_as_mentor') — 092
 ///  - 답변: individual_question_messages insert + status='answered' (RPC 아님)
-///  - 정산/환불(release/refund): 학생 본인용 인증 래퍼 RPC 호출
-///    (release_individual_question / refund_individual_question — 091 마이그레이션).
+///  - 정산/환불: rpc('release_individual_question') / rpc('refund_individual_question') — 091
 ///    래퍼가 auth.uid()=student_id·상태를 검증한 뒤 service_role 코어 함수를 내부 호출한다.
 class SupabaseIndividualQuestionsRepository
     implements IndividualQuestionsRepository {
@@ -117,12 +117,16 @@ class SupabaseIndividualQuestionsRepository
     required String title,
     required String body,
     required int priceCash,
+    String? idempotencyKey,
   }) async {
-    final row = await _db.rpc('create_individual_question_with_hold', params: {
+    // 학생 본인용 인증 래퍼(092). 래퍼가 student_id=auth.uid()를 강제하고
+    // 멱등성 키로 이중 예치를 막은 뒤 service_role 코어 함수를 내부 호출한다.
+    final row = await _db.rpc('create_individual_question_as_student', params: {
       'p_question_type': 'open',
       'p_title': title,
       'p_body': body,
       'p_amount_cents': priceCash * 100,
+      if (idempotencyKey != null) 'p_idempotency_key': idempotencyKey,
     });
     return IndividualQuestion.fromMap(
         (row is List ? row.first : row) as Map<String, dynamic>);
@@ -134,12 +138,15 @@ class SupabaseIndividualQuestionsRepository
     required String mentorName,
     required String title,
     required String body,
+    String? idempotencyKey,
   }) async {
-    final row = await _db.rpc('create_individual_question_with_hold', params: {
+    // 지정질문 가격은 래퍼가 멘토 가격표에서 직접 조회한다(앱 표시가와 동일 소스).
+    final row = await _db.rpc('create_individual_question_as_student', params: {
       'p_question_type': 'direct',
       'p_designated_mentor_id': mentorId,
       'p_title': title,
       'p_body': body,
+      if (idempotencyKey != null) 'p_idempotency_key': idempotencyKey,
     });
     return IndividualQuestion.fromMap(
         (row is List ? row.first : row) as Map<String, dynamic>);
@@ -147,7 +154,9 @@ class SupabaseIndividualQuestionsRepository
 
   @override
   Future<void> claimOpen(String id) async {
-    await _db.rpc('claim_individual_question', params: {'p_question_id': id});
+    // 멘토 본인용 인증 래퍼(092). 래퍼가 mentor_id=auth.uid()를 강제한다.
+    await _db.rpc('claim_individual_question_as_mentor',
+        params: {'p_question_id': id});
   }
 
   @override

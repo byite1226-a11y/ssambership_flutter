@@ -25,18 +25,22 @@ abstract class IndividualQuestionsRepository {
   Future<void> setMyMentorPrice(int priceCash);
 
   /// 공개 질문 등록 + 예치.
+  /// [idempotencyKey] 동일 등록의 재시도 시 이중 예치(이중 과금)를 막는 키.
   Future<IndividualQuestion> createOpen({
     required String title,
     required String body,
     required int priceCash,
+    String? idempotencyKey,
   });
 
   /// 지정 질문 등록 + 예치(멘토 고정가).
+  /// [idempotencyKey] 동일 등록의 재시도 시 이중 예치(이중 과금)를 막는 키.
   Future<IndividualQuestion> createDirect({
     required String mentorId,
     required String mentorName,
     required String title,
     required String body,
+    String? idempotencyKey,
   });
 
   /// 공개 질문 가져가기(멘토).

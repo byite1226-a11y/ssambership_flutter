@@ -233,6 +233,11 @@ class _IndividualQuestionComposeScreenState
   final _price = TextEditingController(text: '5000');
   bool _busy = false;
 
+  /// 이 등록 화면 1회분의 멱등성 키. 처음 제출 시 한 번 만들어 재사용하므로
+  /// 네트워크 재시도로 제출이 두 번 가도 서버가 한 번만 예치한다(이중 과금 방지).
+  late final String _idem =
+      'iq-${DateTime.now().microsecondsSinceEpoch}-${identityHashCode(this)}';
+
   bool get _isOpen => widget.mode == IQType.open;
 
   @override
@@ -270,13 +275,18 @@ class _IndividualQuestionComposeScreenState
           setState(() => _busy = false);
           return;
         }
-        await repo.createOpen(title: title, body: body, priceCash: price);
+        await repo.createOpen(
+            title: title,
+            body: body,
+            priceCash: price,
+            idempotencyKey: _idem);
       } else {
         await repo.createDirect(
           mentorId: widget.mentorId!,
           mentorName: widget.mentorName ?? '멘토',
           title: title,
           body: body,
+          idempotencyKey: _idem,
         );
       }
       ref.invalidate(myIndividualQuestionsProvider);

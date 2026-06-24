@@ -127,6 +127,7 @@ class FakeIndividualQuestionsRepository implements IndividualQuestionsRepository
     required String title,
     required String body,
     required int priceCash,
+    String? idempotencyKey,
   }) async {
     _store.ensureSeed();
     if (priceCash <= 0) throw Exception('가격을 입력해 주세요.');
@@ -155,6 +156,7 @@ class FakeIndividualQuestionsRepository implements IndividualQuestionsRepository
     required String mentorName,
     required String title,
     required String body,
+    String? idempotencyKey,
   }) async {
     _store.ensureSeed();
     await Future<void>.delayed(const Duration(milliseconds: 260));
