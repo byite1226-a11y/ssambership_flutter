@@ -3,9 +3,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/settlement.dart';
 import '../settlements_repository.dart';
 
-/// 실DB 구현 — 정산은 custom_request_orders(멘토 몫 80%)에서 파생, 출금은 withdrawals.
+/// 실DB 구현 — 정산은 custom_order_settlement_items(웹 정본), 출금은 withdrawals(093).
 ///
-/// 정산/출금 전용 테이블·뷰·RPC는 운영 정책에 맞춰 확정 필요. 아래는 best-effort.
+/// 정산 금액의 진실의 원천은 custom_order_settlement_items.mentor_amount 다.
+///  - 이 값은 이미 "멘토 몫(= gross − 수수료 20%)"이라 0.8을 다시 곱하지 않는다(이중 차감 방지).
+///  - 단위는 원 = 캐시(정수). 100으로 나누지 않는다.
+///  - status: 'paid'=정산 완료(지급됨), 'pending'/'on_hold'/'payable'=정산 예정,
+///    'cancelled'=분쟁 취소분이라 목록에서 제외(과다 집계 방지).
+///  - 제목은 custom_request_orders(title)를 임베드해서 가져온다.
+///
+/// ⚠️ 출금(withdrawals)은 "요청 로그"까지만 기록한다(093 헤더 참조). 실제 송금/차감은
+///    finance-settlement 가 지급 경로를 확정하기 전까지 연결하지 않는다(돈 사고 방지).
 class SupabaseSettlementsRepository implements SettlementsRepository {
   SupabaseSettlementsRepository(this._db);
 
@@ -13,40 +21,34 @@ class SupabaseSettlementsRepository implements SettlementsRepository {
   String? get _uid => _db.auth.currentUser?.id;
 
   Future<List<SettlementEntry>> _all() async {
+    // 정본 정산 테이블에서 멘토 본인 몫을 읽는다(RLS: mentor_id=auth.uid() 허용).
+    // custom_request_orders(title)를 FK로 임베드해 의뢰 제목을 함께 가져온다.
     final rows = await _db
-        .from('custom_request_orders')
-        .select()
+        .from('custom_order_settlement_items')
+        .select('id, mentor_amount, status, created_at, custom_request_orders(title)')
         .eq('mentor_id', _uid ?? '')
         .order('created_at', ascending: false);
     final list = <SettlementEntry>[];
     for (final raw in (rows as List)) {
       final o = raw as Map<String, dynamic>;
-      final amount = (o['amount_cash'] as num?)?.toInt() ??
-          ((o['amount_cents'] as num?)?.toInt() ?? 0) ~/ 100;
-      final share = (amount * 0.8).round();
       final status = (o['status'] as String?) ?? '';
-      final title = (o['title'] as String?) ?? '의뢰';
+      if (status == 'cancelled') continue; // 분쟁 취소분은 정산에서 제외
+      // mentor_amount = 이미 멘토 몫(수수료 20% 차감 후). 단위 원=캐시. 재차감/나눗셈 금지.
+      final amount = (o['mentor_amount'] as num?)?.toInt() ?? 0;
+      final order = o['custom_request_orders'] as Map<String, dynamic>?;
+      final title = (order?['title'] as String?) ?? '의뢰';
       final created = switch (o['created_at']) {
         String s => DateTime.tryParse(s),
         _ => null,
       };
-      if (status == 'accepted') {
-        list.add(SettlementEntry(
-            id: 'sto-${o['id']}',
-            label: '의뢰 정산 — $title',
-            amountCash: share,
-            kind: 'order',
-            settled: true,
-            createdAt: created));
-      } else if (status == 'in_progress' || status == 'delivered') {
-        list.add(SettlementEntry(
-            id: 'sto-${o['id']}',
-            label: '의뢰 예정 — $title',
-            amountCash: share,
-            kind: 'order',
-            settled: false,
-            createdAt: created));
-      }
+      final settled = status == 'paid'; // 지급 완료만 정산 완료로 집계
+      list.add(SettlementEntry(
+          id: 'cosi-${o['id']}',
+          label: settled ? '의뢰 정산 — $title' : '의뢰 예정 — $title',
+          amountCash: amount,
+          kind: 'order',
+          settled: settled,
+          createdAt: created));
     }
     return list;
   }
