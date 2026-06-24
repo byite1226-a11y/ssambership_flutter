@@ -24,7 +24,9 @@ class SupabaseConfig {
   /// 필기 리뉴얼은 기존 분리 원칙(원본/썸네일 분리)을 그대로 따릅니다.
   static const String bucketConnectionNoteInk = 'connection-note-ink';
   static const String bucketConnectionNoteThumb = 'connection-note-thumbnails';
-  static const String bucketScanOriginals = 'custom-request-post-attachments';
+  // 스캔 펜 첨삭 전용 비공개 버킷(090_scan_annotations.sql에서 생성).
+  // 학생 필체·개인정보가 담길 수 있어 맞춤의뢰 첨부와 분리해 별도 버킷을 쓴다.
+  static const String bucketScanOriginals = 'scan-annotations';
   static const String bucketCommunityImages = 'community-post-images';
 }
 
