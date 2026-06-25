@@ -164,23 +164,22 @@ class SupabaseIndividualQuestionsRepository
     required String id,
     required String body,
   }) async {
-    // 웹과 동일한 2단계: ① 답변 메시지를 individual_question_messages 에 기록,
-    // ② 질문 상태를 answered 로 전이(학생이 [확인·정산] 버튼을 보게 됨).
-    // 전용 answer RPC 는 DB 에 없으므로 직접 insert/update 로 처리한다.
-    final inserted = await _db
-        .from('individual_question_messages')
-        .insert({
-          'question_id': id,
-          'author_id': _uid,
-          'body': body,
-        })
-        .select()
-        .single();
-    await _db.from('individual_questions').update({
-      'status': 'answered',
-      'answered_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', id);
-    return IndividualQuestionMessage.fromMap(inserted);
+    // 070 설계(에스크로 테이블은 RPC 경유 변경만)에 맞춰, 메시지 기록 + 상태
+    // 전이(answered)를 단일 RPC 로 원자 처리한다. 멘토 권한·상태 가드는 서버가
+    // 강제(담당=claimed/지정=designated 멘토, 상태 claimed/assigned 만).
+    // RPC 는 갱신된 individual_questions 행을 반환하므로, 호출부가 쓰지 않는
+    // 반환 메시지는 알려진 입력값으로 구성한다.
+    await _db.rpc('answer_individual_question', params: {
+      'p_question_id': id,
+      'p_body': body,
+    });
+    return IndividualQuestionMessage(
+      id: id,
+      questionId: id,
+      authorId: _uid ?? '',
+      body: body,
+      createdAt: DateTime.now().toUtc(),
+    );
   }
 
   @override
