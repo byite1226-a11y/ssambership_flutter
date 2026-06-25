@@ -106,9 +106,10 @@ class SupabaseIndividualQuestionsRepository
   Future<void> setMyMentorPrice(int priceCash) async {
     final uid = _uid;
     if (uid == null) throw Exception('로그인이 필요해요.');
-    await _db.from('mentor_individual_question_pricing').upsert({
-      'mentor_id': uid,
-      'amount_cents': priceCash * 100,
+    // 070 설계(가격표=개별질문 도메인 테이블, 변경은 RPC 경유)에 맞춰 직접
+    // upsert 대신 RPC 1회. 서버가 멘토 본인(mentor_id=auth.uid())만 강제한다.
+    await _db.rpc('set_individual_question_price', params: {
+      'p_amount_cents': priceCash * 100,
     });
   }
 
